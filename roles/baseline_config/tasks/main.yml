@@ -53,6 +53,14 @@
     - dns
     - management
 
+- name: Configure admin idle timeout
+  paloaltonetworks.panos.panos_mgtconfig:
+    provider: "{{ panorama_provider }}"
+    template: "{{ ts }}"
+    admin_lockout_time: "{{ baseline_management.idle_timeout }}"
+  tags:
+    - management
+
 - name: Retrieve device groups for validation
   paloaltonetworks.panos.panos_op:
     provider: "{{ panorama_provider }}"
