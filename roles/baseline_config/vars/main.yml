@@ -1,0 +1,15 @@
+---
+# Role-specific variables for baseline_config role
+# These can override values from group_vars/all.yml if needed
+
+# Enable or disable specific baseline checks
+check_security_profiles: true
+check_zone_protection: true
+check_management_settings: true
+check_ntp_config: true
+check_dns_config: true
+check_password_policy: true
+
+# Reporting
+generate_compliance_report: true
+report_format: "json"  # Options: json, yaml, text

@@ -1,0 +1,35 @@
+# Ansible
+*.retry
+.ansible/
+*.log
+
+# Sensitive files
+*vault*
+*secret*
+*password*
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.bak
+*.backup

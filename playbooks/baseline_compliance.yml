@@ -1,0 +1,47 @@
+---
+# Baseline Compliance Playbook
+# Purpose: Ensure Panorama configuration matches baseline standards to prevent config drift
+# Usage: ansible-playbook playbooks/baseline_compliance.yml -i inventory/production
+
+- name: Palo Alto Baseline Compliance Check and Enforcement
+  hosts: panorama
+  gather_facts: false
+
+  # Baseline standards are now loaded from inventory/production/group_vars/all.yml
+  # This gives proper precedence: all.yml < group_vars < host_vars
+  # No need for vars_files here!
+
+  tasks:
+    - name: Display playbook information
+      ansible.builtin.debug:
+        msg:
+          - "Running baseline compliance check for Panorama: {{ ansible_host }}"
+          - "Device Group: {{ device_group }}"
+          - "Template Stack: {{ template_stack }}"
+          - "Check Mode: {{ ansible_check_mode }}"
+
+    # Use the baseline_config role to do the actual work
+    - name: Apply baseline configuration role
+      ansible.builtin.include_role:
+        name: baseline_config
+      tags:
+        - baseline
+        - compliance
+
+    # Commit changes if not in check mode
+    - name: Commit configuration to Panorama
+      paloaltonetworks.panos.panos_commit_panorama:
+        provider: "{{ provider }}"
+        description: "{{ commit_description }} - Baseline compliance"
+      when:
+        - commit_changes | default(true) | bool
+        - not ansible_check_mode
+      tags:
+        - commit
+
+    - name: Display completion message
+      ansible.builtin.debug:
+        msg:
+          - "Baseline compliance check completed!"
+          - "Review the output above for any changes made."
+          - "Next: Push changes to devices with a separate push playbook if needed."

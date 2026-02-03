@@ -1,0 +1,27 @@
+---
+# Variables specific to Panorama hosts
+
+# API Provider settings
+# These are used by paloaltonetworks.panos modules
+provider:
+  ip_address: "{{ ansible_host }}"
+  username: "{{ lookup('env', 'PANORAMA_USERNAME') | default('admin', true) }}"
+  password: "{{ lookup('env', 'PANORAMA_PASSWORD') | default('admin', true) }}"
+
+# IMPORTANT: For production, use one of these methods:
+# 1. Environment variables (recommended):
+#    export PANORAMA_USERNAME='your-user'
+#    export PANORAMA_PASSWORD='your-password'
+#
+# 2. Ansible Vault (most secure):
+#    Create encrypted vault file: ansible-vault create group_vars/panorama/vault.yml
+#    Add: vault_panorama_username: "actual-user"
+#         vault_panorama_password: "actual-password"
+#    Then reference: username: "{{ vault_panorama_username }}"
+
+# Commit settings
+commit_changes: true  # Whether to commit after making changes
+commit_description: "Ansible automated configuration"
+
+# Baseline compliance settings
+baseline_check_mode: false  # Set to true to only check, not enforce

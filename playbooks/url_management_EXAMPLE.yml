@@ -1,0 +1,65 @@
+---
+# URL Category Management Playbook (EXAMPLE - Future Use)
+# Purpose: Add URLs to custom URL filtering categories
+# Usage: ansible-playbook playbooks/url_management.yml -i inventory/production
+
+- name: Manage Custom URL Categories in Panorama
+  hosts: panorama
+  gather_facts: false
+
+  # Example variables
+  vars:
+    custom_url_categories:
+      - name: "Approved-SaaS-Apps"
+        description: "Company approved SaaS applications"
+        urls:
+          - "*.salesforce.com"
+          - "*.office365.com"
+          - "*.slack.com"
+          - "*.zoom.us"
+        type: "URL List"
+
+      - name: "Blocked-Social-Media"
+        description: "Social media sites to block"
+        urls:
+          - "*.facebook.com"
+          - "*.instagram.com"
+          - "*.tiktok.com"
+          - "*.twitter.com"
+        type: "URL List"
+
+  tasks:
+    - name: Create or update custom URL categories
+      paloaltonetworks.panos.panos_custom_url_category:
+        provider: "{{ provider }}"
+        device_group: "{{ device_group }}"
+        name: "{{ item.name }}"
+        description: "{{ item.description }}"
+        url_value: "{{ item.urls }}"
+        type: "{{ item.type }}"
+        state: present
+      loop: "{{ custom_url_categories }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: url_category_results
+
+    - name: Display changes
+      ansible.builtin.debug:
+        msg: "Updated category: {{ item.item.name }} - Changed: {{ item.changed }}"
+      loop: "{{ url_category_results.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+
+    - name: Commit changes
+      paloaltonetworks.panos.panos_commit_panorama:
+        provider: "{{ provider }}"
+        description: "Ansible - Custom URL category updates"
+      when:
+        - commit_changes | default(true)
+        - url_category_results is changed
+
+# USAGE NOTES:
+# 1. Modify custom_url_categories list above
+# 2. Can also load from external file: vars/url_categories.yml
+# 3. Consider adding tasks to update URL filtering profiles
+# 4. Test with --check mode first!

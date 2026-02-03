@@ -1,0 +1,43 @@
+---
+# Group variables for all partner network Device Groups
+# These settings apply to all DGs in the partner_networks group
+
+# Standard session timeouts for partner networks
+baseline_session:
+  tcp_timeout: 3600  # 1 hour (standard for trusted partners)
+  udp_timeout: 30
+  tcp_timewait: 15
+
+# Moderate security profile settings for trusted partners
+baseline_security_profile_group:
+  name: "Partner-Security-Profile"
+  virus: "default"
+  spyware: "default"
+  vulnerability: "default"
+  url_filtering: "alert-only"  # Less restrictive for partners
+  file_blocking: "basic-file-blocking"
+  wildfire: "default"
+
+# Moderate flood protection for partner traffic
+baseline_zone_protection:
+  name: "Partner-Zone-Protection"
+  settings:
+    flood_tcp_syn: 25000
+    flood_udp: 25000
+    flood_icmpv4: 2500
+    scan_protection: true
+
+# Management settings for partner environments
+baseline_management:
+  permitted_ips:
+    - "10.0.0.0/8"      # Internal management network
+    - "172.16.0.0/12"   # Partner networks may use this range
+  services:
+    https: true
+    ssh: true
+    http: false
+    telnet: false
+  idle_timeout: 15
+
+# Note: Cloud-specific settings (NTP, DNS) should be in host_vars
+# since GCP and AWS have different requirements

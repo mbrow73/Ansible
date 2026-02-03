@@ -1,0 +1,70 @@
+---
+# Baseline configuration for DMZ E1 Device Group
+# DMZ has the strictest security requirements
+
+# Security Profile Group - strictest for DMZ
+baseline_security_profile_group:
+  name: "DMZ-Security-Profile"
+  virus: "strict"
+  spyware: "strict"
+  vulnerability: "strict"
+  url_filtering: "strict"
+  file_blocking: "strict"
+  wildfire: "default"
+
+# Zone Protection - highest thresholds
+baseline_zone_protection:
+  name: "DMZ-Zone-Protection"
+  settings:
+    flood_tcp_syn: 100000  # Very high for DMZ
+    flood_udp: 100000
+    flood_icmpv4: 10000
+    scan_protection: true
+
+# Management - very restrictive
+baseline_management:
+  permitted_ips:
+    - "192.168.1.0/24"  # Only admin network
+  services:
+    https: true
+    ssh: true
+    http: false
+    telnet: false
+  idle_timeout: 5  # Very short timeout
+
+# Session Settings - aggressive timeouts
+baseline_session:
+  tcp_timeout: 900  # 15 minutes (very short)
+  udp_timeout: 15
+  tcp_timewait: 10
+
+# Standard NTP
+baseline_ntp:
+  primary_server: "ntp.example.com"
+  secondary_server: "0.pool.ntp.org"
+
+# DMZ security rules - very explicit
+baseline_security_rules:
+  - name: "Allow-DMZ-Web-Inbound"
+    source_zone: ["untrust"]
+    destination_zone: ["dmz"]
+    source_address: ["any"]
+    destination_address: ["Web-Servers"]
+    application: ["ssl", "web-browsing"]
+    service: ["service-https"]
+    action: "allow"
+    profile_group: "DMZ-Security-Profile"
+    log_start: true  # Log start AND end
+    log_end: true
+    description: "Inbound web traffic to DMZ"
+
+  - name: "Block-DMZ-Outbound"
+    source_zone: ["dmz"]
+    destination_zone: ["trust"]
+    source_address: ["any"]
+    destination_address: ["any"]
+    application: ["any"]
+    service: ["any"]
+    action: "deny"
+    log_end: true
+    description: "DMZ cannot access internal network"
