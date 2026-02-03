@@ -1,8 +1,4 @@
 ---
-# Test Variable Precedence Playbook
-# Usage: ansible-playbook playbooks/test_variables.yml
-# This doesn't connect to Panorama - just shows variable values
-
 - name: Test Variable Precedence
   hosts: panorama
   gather_facts: false
@@ -23,7 +19,6 @@
         msg:
           - "TCP Timeout: {{ baseline_session.tcp_timeout }}"
           - "UDP Timeout: {{ baseline_session.udp_timeout }}"
-          - "Source: Check if this matches expected (group_vars or host_vars)"
 
     - name: Display security profile settings
       ansible.builtin.debug:
