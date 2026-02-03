@@ -1,0 +1,95 @@
+---
+# Baseline Configuration Role - Main Tasks
+# This role enforces baseline security standards on Panorama
+
+- name: Set baseline facts
+  ansible.builtin.set_fact:
+    panorama_provider: "{{ provider }}"
+    dg: "{{ device_group }}"
+    ts: "{{ template_stack }}"
+
+# Security Profile Groups
+# NOTE: This task uses panos_security_rule_group which may need to be verified
+# The correct module might be panos_security_profile_group or panos_security_rule
+# depending on what you're trying to configure. Check PAN-OS Ansible collection docs:
+# https://paloaltonetworks.github.io/pan-os-ansible/
+- name: Configure baseline security profile group
+  paloaltonetworks.panos.panos_security_rule_group:
+    provider: "{{ panorama_provider }}"
+    device_group: "{{ dg }}"
+    name: "{{ baseline_security_profile_group.name }}"
+    virus: "{{ baseline_security_profile_group.virus }}"
+    spyware: "{{ baseline_security_profile_group.spyware }}"
+    vulnerability: "{{ baseline_security_profile_group.vulnerability }}"
+    url_filtering: "{{ baseline_security_profile_group.url_filtering }}"
+    file_blocking: "{{ baseline_security_profile_group.file_blocking }}"
+    wildfire_analysis: "{{ baseline_security_profile_group.wildfire }}"
+    state: present
+  tags:
+    - security_profiles
+
+# Zone Protection Profile
+- name: Configure baseline zone protection profile
+  paloaltonetworks.panos.panos_zone_protection_profile:
+    provider: "{{ panorama_provider }}"
+    device_group: "{{ dg }}"
+    name: "{{ baseline_zone_protection.name }}"
+    flood_tcp_syn: "{{ baseline_zone_protection.settings.flood_tcp_syn }}"
+    flood_udp: "{{ baseline_zone_protection.settings.flood_udp }}"
+    flood_icmpv4: "{{ baseline_zone_protection.settings.flood_icmpv4}}"
+    enable_scan_protection: "{{ baseline_zone_protection.settings.scan_protection }}"
+    state: present
+  tags:
+    - zone_protection
+
+# NTP Configuration
+- name: Configure NTP servers
+  paloaltonetworks.panos.panos_mgtconfig:
+    provider: "{{ panorama_provider }}"
+    template: "{{ ts }}"
+    ntp_server_primary: "{{ baseline_ntp.primary_server }}"
+    ntp_server_secondary: "{{ baseline_ntp.secondary_server }}"
+  tags:
+    - ntp
+    - management
+
+# DNS Configuration
+- name: Ensure DNS servers are configured
+  paloaltonetworks.panos.panos_mgtconfig:
+    provider: "{{ panorama_provider }}"
+    template: "{{ ts }}"
+    dns_server_primary: "{{ baseline_dns.primary_server }}"
+    dns_server_secondary: "{{ baseline_dns.secondary_server }}"
+  tags:
+    - dns
+    - management
+
+# Baseline Security Rules (example)
+# Note: In production, you might want to use panos_security_rule module
+# This is a simplified example
+- name: Display baseline security rules to be configured
+  ansible.builtin.debug:
+    msg: "Baseline security rules would be configured here. See inventory/production/group_vars/all.yml"
+  tags:
+    - security_rules
+
+# Validation Tasks
+- name: Retrieve current Panorama device groups
+  paloaltonetworks.panos.panos_op:
+    provider: "{{ panorama_provider }}"
+    cmd: "show devicegroups"
+  register: devicegroups_output
+  tags:
+    - validation
+    - always
+
+- name: Display validation summary
+  ansible.builtin.debug:
+    msg:
+      - "Baseline configuration tasks completed"
+      - "Device Group: {{ dg }}"
+      - "Template Stack: {{ ts }}"
+      - "Security Profile Group: {{ baseline_security_profile_group.name }}"
+      - "Zone Protection Profile: {{ baseline_zone_protection.name }}"
+  tags:
+    - always

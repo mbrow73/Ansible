@@ -1,0 +1,9 @@
+---
+# Ansible Collections required for this project
+# Install with: ansible-galaxy collection install -r requirements.yml
+
+collections:
+  # Official Palo Alto Networks collection
+  # Documentation: https://paloaltonetworks.github.io/pan-os-ansible/
+  - name: paloaltonetworks.panos
+    version: ">=2.17.0"

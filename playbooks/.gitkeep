@@ -1,0 +1,6 @@
+# Placeholder for future playbooks
+# Examples of playbooks to add:
+# - nat_onboarding.yml (for port forwarding/NAT rules)
+# - url_management.yml (for adding URLs to URL filtering categories)
+# - security_rule_management.yml (for managing security policies)
+# - user_id_management.yml (for User-ID operations)

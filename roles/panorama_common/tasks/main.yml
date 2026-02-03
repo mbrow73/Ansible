@@ -1,0 +1,30 @@
+---
+# Common Panorama Tasks
+# Reusable tasks for Panorama operations
+
+- name: Verify Panorama connectivity
+  paloaltonetworks.panos.panos_op:
+    provider: "{{ provider }}"
+    cmd: "show system info"
+  register: panorama_info
+  changed_when: false
+  tags:
+    - always
+    - connectivity
+
+- name: Display Panorama version
+  ansible.builtin.debug:
+    msg: "Connected to Panorama version: {{ panorama_info.stdout | regex_search('sw-version: ([0-9.-]+)', '\\1') | first }}"
+  when: panorama_info.stdout is defined
+  tags:
+    - always
+    - connectivity
+
+- name: Check for pending commits
+  paloaltonetworks.panos.panos_op:
+    provider: "{{ provider }}"
+    cmd: "show config list changes"
+  register: pending_changes
+  changed_when: false
+  tags:
+    - validation

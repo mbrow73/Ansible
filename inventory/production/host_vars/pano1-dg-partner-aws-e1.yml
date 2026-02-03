@@ -1,0 +1,75 @@
+---
+# Baseline configuration for Partner AWS E1 Device Group
+# Similar to GCP Partner but with AWS-specific settings
+
+# Security Profile Group - same as other partners
+baseline_security_profile_group:
+  name: "Partner-Security-Profile"
+  virus: "default"
+  spyware: "default"
+  vulnerability: "default"
+  url_filtering: "alert-only"
+  file_blocking: "basic-file-blocking"
+  wildfire: "default"
+
+# Zone Protection
+baseline_zone_protection:
+  name: "Partner-Zone-Protection"
+  settings:
+    flood_tcp_syn: 25000
+    flood_udp: 25000
+    flood_icmpv4: 2500
+    scan_protection: true
+
+# Management
+baseline_management:
+  permitted_ips:
+    - "10.0.0.0/8"
+    - "172.16.0.0/12"
+  services:
+    https: true
+    ssh: true
+    http: false
+    telnet: false
+  idle_timeout: 15
+
+# Session Settings
+baseline_session:
+  tcp_timeout: 3600
+  udp_timeout: 30
+  tcp_timewait: 15
+
+# AWS-specific NTP (uses EC2 metadata service)
+baseline_ntp:
+  primary_server: "169.254.169.123"  # AWS NTP
+  secondary_server: "0.pool.ntp.org"
+
+# AWS-specific DNS
+baseline_dns:
+  primary_server: "169.254.169.253"  # AWS DNS
+  secondary_server: "8.8.8.8"
+
+# Partner security rules (same as GCP partners)
+baseline_security_rules:
+  - name: "Allow-Partner-Traffic"
+    source_zone: ["partner"]
+    destination_zone: ["trust"]
+    source_address: ["Partner-Networks"]
+    destination_address: ["App-Servers"]
+    application: ["ssl", "web-browsing", "ssh"]
+    service: ["application-default"]
+    action: "allow"
+    profile_group: "Partner-Security-Profile"
+    log_end: true
+    description: "Partner access to applications"
+
+  - name: "Block-Partner-Internet"
+    source_zone: ["partner"]
+    destination_zone: ["untrust"]
+    source_address: ["any"]
+    destination_address: ["any"]
+    application: ["any"]
+    service: ["any"]
+    action: "deny"
+    log_end: true
+    description: "Partners cannot access internet directly"

@@ -1,0 +1,70 @@
+---
+# Baseline configuration for GCP Internet E1 Device Group
+# This overrides the default group_vars/all.yml for this specific DG
+
+# Security Profile Group - stricter for internet-facing
+baseline_security_profile_group:
+  name: "Internet-Security-Profile"
+  virus: "strict"
+  spyware: "strict"
+  vulnerability: "strict"
+  url_filtering: "strict"  # Stricter than default
+  file_blocking: "strict"
+  wildfire: "default"
+
+# Zone Protection - higher thresholds for internet
+baseline_zone_protection:
+  name: "Internet-Zone-Protection"
+  settings:
+    flood_tcp_syn: 50000  # Higher for internet traffic
+    flood_udp: 50000
+    flood_icmpv4: 5000
+    scan_protection: true
+
+# Management - restrict to specific IPs
+baseline_management:
+  permitted_ips:
+    - "10.0.0.0/8"
+    - "192.168.1.0/24"
+  services:
+    https: true
+    ssh: true
+    http: false
+    telnet: false
+  idle_timeout: 10  # Shorter for internet-facing
+
+# Session Settings - shorter for internet
+baseline_session:
+  tcp_timeout: 1800  # 30 minutes (shorter than default)
+  udp_timeout: 30
+  tcp_timewait: 15
+
+# GCP-specific settings
+baseline_ntp:
+  primary_server: "metadata.google.internal"  # GCP NTP
+  secondary_server: "0.pool.ntp.org"
+
+# Internet-facing security rules
+baseline_security_rules:
+  - name: "Block-Inbound-Internet"
+    source_zone: ["untrust"]
+    destination_zone: ["trust"]
+    source_address: ["any"]
+    destination_address: ["any"]
+    application: ["any"]
+    service: ["any"]
+    action: "deny"
+    log_end: true
+    description: "Default deny from internet"
+
+  - name: "Allow-Outbound-Web"
+    source_zone: ["trust"]
+    destination_zone: ["untrust"]
+    source_address: ["GCP-Subnet"]
+    destination_address: ["any"]
+    application: ["ssl", "web-browsing"]
+    service: ["application-default"]
+    action: "allow"
+    profile_group: "Internet-Security-Profile"
+    log_end: true
+    description: "Outbound internet with strict inspection"

@@ -1,0 +1,35 @@
+---
+# Group variables for all cloud-based Device Groups
+# These settings apply to all DGs in the cloud_environments group (GCP, AWS, Azure)
+
+# Cloud environments may need different update schedules
+baseline_updates:
+  threat_prevention_updates: "auto"
+  antivirus_updates: "auto"
+  wildfire_updates: "auto"
+  update_schedule: "daily"
+  update_time: "03:00"  # 3 AM UTC to avoid peak hours
+
+# Cloud-specific management
+baseline_management:
+  permitted_ips:
+    - "10.0.0.0/8"      # Internal cloud networks
+    - "172.16.0.0/12"   # Additional cloud ranges
+  services:
+    https: true
+    ssh: true
+    http: false
+    telnet: false
+  idle_timeout: 15
+
+# Note: Specific NTP and DNS servers vary by cloud provider
+# Define these in host_vars for each cloud provider:
+# - GCP: metadata.google.internal
+# - AWS: 169.254.169.123 (NTP), 169.254.169.253 (DNS)
+# - Azure: time.windows.com
+
+# Session settings can be standard for cloud
+baseline_session:
+  tcp_timeout: 3600
+  udp_timeout: 30
+  tcp_timewait: 15

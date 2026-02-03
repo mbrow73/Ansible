@@ -1,0 +1,81 @@
+---
+# NAT Rule Onboarding Playbook (EXAMPLE - Future Use)
+# Purpose: Add port forwarding NAT rules to Panorama
+# Usage: ansible-playbook playbooks/nat_onboarding.yml -i inventory/production
+
+# This is a template for future expansion. Customize when ready to implement.
+
+- name: Onboard NAT Rules to Panorama
+  hosts: panorama
+  gather_facts: false
+
+  # Example variables - move to vars file or prompt for in production
+  vars:
+    nat_rules:
+      - name: "Web-Server-DMZ"
+        source_zone: "untrust"
+        destination_zone: "dmz"
+        source_address: "any"
+        destination_address: "Public-IP-1"
+        service: "service-http"
+        source_translation_type: "dynamic-ip-and-port"
+        source_translation_address: "NAT-Pool"
+        destination_translated_address: "10.10.10.10"
+        destination_translated_port: "80"
+
+      - name: "SSH-Jump-Host"
+        source_zone: "untrust"
+        destination_zone: "mgmt"
+        source_address: "Trusted-Admin-IPs"
+        destination_address: "Public-IP-2"
+        service: "service-ssh"
+        destination_translated_address: "10.10.20.5"
+        destination_translated_port: "22"
+
+  tasks:
+    - name: Display NAT rules to be added
+      ansible.builtin.debug:
+        msg: "Will create {{ nat_rules | length }} NAT rules"
+
+    # Loop through NAT rules and create each one
+    - name: Create NAT rules in Panorama
+      paloaltonetworks.panos.panos_nat_rule2:
+        provider: "{{ provider }}"
+        device_group: "{{ device_group }}"
+        name: "{{ item.name }}"
+        source_zone: "{{ item.source_zone }}"
+        destination_zone: "{{ item.destination_zone }}"
+        source_ip: "{{ item.source_address }}"
+        destination_ip: "{{ item.destination_address }}"
+        service: "{{ item.service }}"
+        snat_type: "{{ item.source_translation_type | default('none') }}"
+        snat_address_type: "{{ item.source_translation_address | default(omit) }}"
+        dnat_address: "{{ item.destination_translated_address }}"
+        dnat_port: "{{ item.destination_translated_port }}"
+        state: present
+      loop: "{{ nat_rules }}"
+      loop_control:
+        label: "{{ item.name }}"  # Only show name in output, not full item
+      register: nat_results
+
+    - name: Commit changes
+      paloaltonetworks.panos.panos_commit_panorama:
+        provider: "{{ provider }}"
+        description: "Ansible - NAT rule onboarding"
+      when:
+        - commit_changes | default(true)
+        - nat_results is changed
+
+    - name: Display summary
+      ansible.builtin.debug:
+        msg:
+          - "NAT rule onboarding completed!"
+          - "Rules created: {{ nat_results.results | selectattr('changed', 'equalto', true) | list | length }}"
+          - "Next: Push to devices if needed"
+
+# USAGE NOTES:
+# 1. Customize the nat_rules variable list above
+# 2. Or create a separate vars file: vars/nat_rules.yml
+# 3. Or prompt for input using vars_prompt
+# 4. Test with --check first!
+# 5. Consider adding validation tasks to verify rules were created correctly

@@ -1,0 +1,56 @@
+---
+# Test Variable Precedence Playbook
+# Usage: ansible-playbook playbooks/test_variables.yml
+# This doesn't connect to Panorama - just shows variable values
+
+- name: Test Variable Precedence
+  hosts: panorama
+  gather_facts: false
+  connection: local
+
+  tasks:
+    - name: Display host information
+      ansible.builtin.debug:
+        msg:
+          - "Host: {{ inventory_hostname }}"
+          - "Device Group: {{ device_group }}"
+          - "Template: {{ template_stack }}"
+          - "Environment Type: {{ env_type | default('not set') }}"
+          - "Network Type: {{ network_type | default('not set') }}"
+
+    - name: Display baseline session settings
+      ansible.builtin.debug:
+        msg:
+          - "TCP Timeout: {{ baseline_session.tcp_timeout }}"
+          - "UDP Timeout: {{ baseline_session.udp_timeout }}"
+          - "Source: Check if this matches expected (group_vars or host_vars)"
+
+    - name: Display security profile settings
+      ansible.builtin.debug:
+        msg:
+          - "Profile Name: {{ baseline_security_profile_group.name }}"
+          - "URL Filtering: {{ baseline_security_profile_group.url_filtering }}"
+          - "Virus: {{ baseline_security_profile_group.virus }}"
+
+    - name: Display NTP settings
+      ansible.builtin.debug:
+        msg:
+          - "Primary NTP: {{ baseline_ntp.primary_server }}"
+          - "Secondary NTP: {{ baseline_ntp.secondary_server }}"
+
+    - name: Display DNS settings
+      ansible.builtin.debug:
+        msg:
+          - "Primary DNS: {{ baseline_dns.primary_server }}"
+          - "Secondary DNS: {{ baseline_dns.secondary_server }}"
+
+    - name: Show all baseline variables
+      ansible.builtin.debug:
+        var: "{{ item }}"
+      loop:
+        - baseline_session
+        - baseline_security_profile_group
+        - baseline_zone_protection
+        - baseline_management
+      loop_control:
+        label: "{{ item }}"

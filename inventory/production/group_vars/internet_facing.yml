@@ -1,0 +1,43 @@
+---
+# Group variables for all internet-facing Device Groups
+# These settings apply to all DGs in the internet_facing group
+
+# Stricter session timeouts for internet-facing firewalls
+baseline_session:
+  tcp_timeout: 1800  # 30 minutes (stricter than default 3600)
+  udp_timeout: 30
+  tcp_timewait: 15
+
+# Stricter security profile settings for internet exposure
+baseline_security_profile_group:
+  name: "Internet-Security-Profile"
+  virus: "strict"
+  spyware: "strict"
+  vulnerability: "strict"
+  url_filtering: "strict"
+  file_blocking: "strict"
+  wildfire: "default"
+
+# Higher flood protection thresholds for internet traffic
+baseline_zone_protection:
+  name: "Internet-Zone-Protection"
+  settings:
+    flood_tcp_syn: 50000
+    flood_udp: 50000
+    flood_icmpv4: 5000
+    scan_protection: true
+
+# Shorter management idle timeout for internet-facing devices
+baseline_management:
+  permitted_ips:
+    - "10.0.0.0/8"      # Internal management network
+    - "192.168.1.0/24"  # Admin network
+  services:
+    https: true
+    ssh: true
+    http: false
+    telnet: false
+  idle_timeout: 10  # Shorter timeout for security
+
+# Note: Individual host_vars can still override these group settings
+# Example: pano1-dg-gcp-internet-e1.yml can set different tcp_timeout
