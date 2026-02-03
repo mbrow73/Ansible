@@ -1,27 +1,10 @@
 ---
-# Variables that apply to ALL hosts in the inventory
-
-# Connection settings for PAN-OS devices
-ansible_connection: local  # Run locally, connect via API
+# Connection settings
+ansible_connection: local
 ansible_network_os: paloaltonetworks.panos
-
-# Python interpreter (adjust if needed)
 ansible_python_interpreter: /usr/bin/python3
 
-# =============================================================================
-# Baseline Security Standards for Palo Alto Firewalls
-# =============================================================================
-# These are the DEFAULT baseline configurations that apply to all Device Groups
-# Individual DGs can override these values using:
-#   - group_vars/<group_name>.yml (for groups like internet_facing, partner_networks)
-#   - host_vars/<dg_name>.yml (for specific Device Groups)
-#
-# Variable precedence (low to high):
-#   1. group_vars/all.yml (THIS FILE - lowest, defaults for everyone)
-#   2. group_vars/<specific_group>.yml (e.g., internet_facing.yml)
-#   3. host_vars/<specific_host>.yml (highest, per-DG overrides)
-
-# Security Profile Group
+# Baseline security standards
 baseline_security_profile_group:
   name: "Baseline-Security-Profile"
   virus: "strict"
@@ -31,18 +14,15 @@ baseline_security_profile_group:
   file_blocking: "strict"
   wildfire: "default"
 
-# DNS Security Settings
 baseline_dns_security:
   enabled: true
   profile: "default"
 
-# Logging Settings
 baseline_logging:
   log_forwarding_profile: "default-forwarding"
   log_at_session_start: false
   log_at_session_end: true
 
-# Zone Protection Profile
 baseline_zone_protection:
   name: "Baseline-Zone-Protection"
   settings:
@@ -51,33 +31,29 @@ baseline_zone_protection:
     flood_icmpv4: 1000
     scan_protection: true
 
-# Management Settings
 baseline_management:
   permitted_ips:
-    - "10.0.0.0/8"      # Example: Internal management network
-    - "192.168.1.0/24"  # Example: Admin network
+    - "10.0.0.0/8"
+    - "192.168.1.0/24"
   services:
     https: true
     ssh: true
-    http: false   # Disable HTTP management
-    telnet: false # Disable Telnet
-  idle_timeout: 15  # Minutes
+    http: false
+    telnet: false
+  idle_timeout: 15
 
-# Session Settings
 baseline_session:
-  tcp_timeout: 3600  # 1 hour
+  tcp_timeout: 3600
   udp_timeout: 30
   tcp_timewait: 15
 
-# Update Settings
 baseline_updates:
   threat_prevention_updates: "auto"
   antivirus_updates: "auto"
   wildfire_updates: "auto"
   update_schedule: "daily"
-  update_time: "02:00"  # 2 AM
+  update_time: "02:00"
 
-# Password Complexity Requirements
 baseline_password_policy:
   enabled: true
   minimum_length: 12
@@ -85,7 +61,6 @@ baseline_password_policy:
   password_history: 12
   change_on_first_login: true
 
-# Example Security Rules that should always exist
 baseline_security_rules:
   - name: "Block-Known-Threats"
     source_zone: ["any"]
@@ -111,19 +86,16 @@ baseline_security_rules:
     log_end: true
     description: "Baseline outbound internet access with security profiles"
 
-# NTP Settings
 baseline_ntp:
   primary_server: "0.pool.ntp.org"
   secondary_server: "1.pool.ntp.org"
 
-# DNS Settings
 baseline_dns:
-  primary_server: "8.8.8.8"    # Google DNS - replace with your DNS
-  secondary_server: "8.8.4.4"  # Google DNS - replace with your DNS
+  primary_server: "8.8.8.8"
+  secondary_server: "8.8.4.4"
 
-# SNMP Settings (if used)
 baseline_snmp:
-  enabled: false  # Enable if you use SNMP monitoring
+  enabled: false
   version: "v3"
   location: "Data Center"
   contact: "network-team@example.com"
