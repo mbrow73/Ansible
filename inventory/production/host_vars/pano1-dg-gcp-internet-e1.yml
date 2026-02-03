@@ -17,14 +17,6 @@ baseline_zone_protection:
     scan_protection: true
 
 baseline_management:
-  permitted_ips:
-    - "10.0.0.0/8"
-    - "192.168.1.0/24"
-  services:
-    https: true
-    ssh: true
-    http: false
-    telnet: false
   idle_timeout: 10
 
 baseline_session:
