@@ -1,0 +1,326 @@
+---
+# Compliance Audit Role - Read-only checks against baseline configuration
+# This role does NOT make any changes; it only reads current state and compares.
+
+- name: Set audit facts
+  ansible.builtin.set_fact:
+    panorama_provider: "{{ provider }}"
+    dg: "{{ device_group }}"
+    ts: "{{ template_stack }}"
+  tags:
+    - audit
+
+# --- Security Profile Group Check ---
+- name: Check security profile group
+  block:
+    - name: Get security profile groups
+      paloaltonetworks.panos.panos_op:
+        provider: "{{ panorama_provider }}"
+        cmd: "<show><running><security-profile-group><device-group>{{ dg }}</device-group></security-profile-group></running></show>"
+        cmd_is_xml: true
+      register: spg_output
+      changed_when: false
+
+    - name: Evaluate security profile group compliance
+      ansible.builtin.set_fact:
+        audit_results: >-
+          {{ audit_results + [{
+            'check': 'security_profile_group',
+            'device_group': dg,
+            'expected': baseline_security_profile_group.name,
+            'actual': spg_output.stdout | default(''),
+            'status': 'pass' if baseline_security_profile_group.name in (spg_output.stdout | default('')) else 'fail',
+            'severity': 'critical'
+          }] }}
+  rescue:
+    - name: Record security profile group check error
+      ansible.builtin.set_fact:
+        audit_results: >-
+          {{ audit_results + [{
+            'check': 'security_profile_group',
+            'device_group': dg,
+            'expected': baseline_security_profile_group.name | default('unknown'),
+            'actual': 'error retrieving data',
+            'status': 'unknown',
+            'severity': 'critical'
+          }] }}
+  tags:
+    - audit
+    - security_profiles
+
+# --- Zone Protection Profile Check ---
+- name: Check zone protection profile
+  block:
+    - name: Get zone protection profiles
+      paloaltonetworks.panos.panos_op:
+        provider: "{{ panorama_provider }}"
+        cmd: "<show><running><zone-protection-profile><device-group>{{ dg }}</device-group></zone-protection-profile></running></show>"
+        cmd_is_xml: true
+      register: zpp_output
+      changed_when: false
+
+    - name: Evaluate zone protection compliance
+      ansible.builtin.set_fact:
+        audit_results: >-
+          {{ audit_results + [{
+            'check': 'zone_protection_profile',
+            'device_group': dg,
+            'expected': baseline_zone_protection.name,
+            'actual': zpp_output.stdout | default(''),
+            'status': 'pass' if baseline_zone_protection.name in (zpp_output.stdout | default('')) else 'fail',
+            'severity': 'high'
+          }] }}
+  rescue:
+    - name: Record zone protection check error
+      ansible.builtin.set_fact:
+        audit_results: >-
+          {{ audit_results + [{
+            'check': 'zone_protection_profile',
+            'device_group': dg,
+            'expected': baseline_zone_protection.name | default('unknown'),
+            'actual': 'error retrieving data',
+            'status': 'unknown',
+            'severity': 'high'
+          }] }}
+  tags:
+    - audit
+    - zone_protection
+
+# --- NTP Configuration Check ---
+- name: Check NTP configuration
+  block:
+    - name: Get NTP settings
+      paloaltonetworks.panos.panos_op:
+        provider: "{{ panorama_provider }}"
+        cmd: "show ntp"
+      register: ntp_output
+      changed_when: false
+
+    - name: Evaluate NTP primary server compliance
+      ansible.builtin.set_fact:
+        audit_results: >-
+          {{ audit_results + [{
+            'check': 'ntp_primary_server',
+            'device_group': dg,
+            'expected': baseline_ntp.primary_server,
+            'actual': ntp_output.stdout | default(''),
+            'status': 'pass' if baseline_ntp.primary_server in (ntp_output.stdout | default('')) else 'fail',
+            'severity': 'medium'
+          }] }}
+
+    - name: Evaluate NTP secondary server compliance
+      ansible.builtin.set_fact:
+        audit_results: >-
+          {{ audit_results + [{
+            'check': 'ntp_secondary_server',
+            'device_group': dg,
+            'expected': baseline_ntp.secondary_server,
+            'actual': ntp_output.stdout | default(''),
+            'status': 'pass' if baseline_ntp.secondary_server in (ntp_output.stdout | default('')) else 'fail',
+            'severity': 'medium'
+          }] }}
+  rescue:
+    - name: Record NTP check error
+      ansible.builtin.set_fact:
+        audit_results: >-
+          {{ audit_results + [{
+            'check': 'ntp_servers',
+            'device_group': dg,
+            'expected': baseline_ntp.primary_server | default('unknown'),
+            'actual': 'error retrieving data',
+            'status': 'unknown',
+            'severity': 'medium'
+          }] }}
+  tags:
+    - audit
+    - ntp
+
+# --- DNS Configuration Check ---
+- name: Check DNS configuration
+  block:
+    - name: Get DNS settings
+      paloaltonetworks.panos.panos_op:
+        provider: "{{ panorama_provider }}"
+        cmd: "show dns-server-config"
+      register: dns_output
+      changed_when: false
+
+    - name: Evaluate DNS primary server compliance
+      ansible.builtin.set_fact:
+        audit_results: >-
+          {{ audit_results + [{
+            'check': 'dns_primary_server',
+            'device_group': dg,
+            'expected': baseline_dns.primary_server,
+            'actual': dns_output.stdout | default(''),
+            'status': 'pass' if baseline_dns.primary_server in (dns_output.stdout | default('')) else 'fail',
+            'severity': 'medium'
+          }] }}
+
+    - name: Evaluate DNS secondary server compliance
+      ansible.builtin.set_fact:
+        audit_results: >-
+          {{ audit_results + [{
+            'check': 'dns_secondary_server',
+            'device_group': dg,
+            'expected': baseline_dns.secondary_server,
+            'actual': dns_output.stdout | default(''),
+            'status': 'pass' if baseline_dns.secondary_server in (dns_output.stdout | default('')) else 'fail',
+            'severity': 'medium'
+          }] }}
+  rescue:
+    - name: Record DNS check error
+      ansible.builtin.set_fact:
+        audit_results: >-
+          {{ audit_results + [{
+            'check': 'dns_servers',
+            'device_group': dg,
+            'expected': baseline_dns.primary_server | default('unknown'),
+            'actual': 'error retrieving data',
+            'status': 'unknown',
+            'severity': 'medium'
+          }] }}
+  tags:
+    - audit
+    - dns
+
+# --- Admin Idle Timeout Check ---
+- name: Check admin idle timeout
+  block:
+    - name: Get management config
+      paloaltonetworks.panos.panos_op:
+        provider: "{{ panorama_provider }}"
+        cmd: "show management-server setting"
+      register: mgmt_output
+      changed_when: false
+
+    - name: Evaluate admin idle timeout compliance
+      ansible.builtin.set_fact:
+        audit_results: >-
+          {{ audit_results + [{
+            'check': 'admin_idle_timeout',
+            'device_group': dg,
+            'expected': baseline_management.idle_timeout | string,
+            'actual': mgmt_output.stdout | default(''),
+            'status': 'pass' if (baseline_management.idle_timeout | string) in (mgmt_output.stdout | default('')) else 'fail',
+            'severity': 'high'
+          }] }}
+  rescue:
+    - name: Record admin idle timeout check error
+      ansible.builtin.set_fact:
+        audit_results: >-
+          {{ audit_results + [{
+            'check': 'admin_idle_timeout',
+            'device_group': dg,
+            'expected': baseline_management.idle_timeout | default('unknown') | string,
+            'actual': 'error retrieving data',
+            'status': 'unknown',
+            'severity': 'high'
+          }] }}
+  tags:
+    - audit
+    - management
+
+# --- Security Rules Check ---
+- name: Check security rules
+  block:
+    - name: Get security rules
+      paloaltonetworks.panos.panos_op:
+        provider: "{{ panorama_provider }}"
+        cmd: "<show><running><security-rule><device-group>{{ dg }}</device-group></security-rule></running></show>"
+        cmd_is_xml: true
+      register: rules_output
+      changed_when: false
+
+    - name: Evaluate security rules compliance
+      ansible.builtin.set_fact:
+        audit_results: >-
+          {{ audit_results + [{
+            'check': 'security_rule_' + item.name,
+            'device_group': dg,
+            'expected': item.name,
+            'actual': rules_output.stdout | default(''),
+            'status': 'pass' if item.name in (rules_output.stdout | default('')) else 'fail',
+            'severity': 'critical'
+          }] }}
+      loop: "{{ baseline_security_rules | default([]) }}"
+      loop_control:
+        label: "{{ item.name }}"
+  rescue:
+    - name: Record security rules check error
+      ansible.builtin.set_fact:
+        audit_results: >-
+          {{ audit_results + [{
+            'check': 'security_rules',
+            'device_group': dg,
+            'expected': 'baseline security rules',
+            'actual': 'error retrieving data',
+            'status': 'unknown',
+            'severity': 'critical'
+          }] }}
+  when: baseline_security_rules is defined
+  tags:
+    - audit
+    - security_rules
+
+# --- Session Timeout Check ---
+- name: Check session timeouts
+  block:
+    - name: Get session timeout settings
+      paloaltonetworks.panos.panos_op:
+        provider: "{{ panorama_provider }}"
+        cmd: "show session timeout"
+      register: session_output
+      changed_when: false
+
+    - name: Evaluate TCP session timeout compliance
+      ansible.builtin.set_fact:
+        audit_results: >-
+          {{ audit_results + [{
+            'check': 'session_tcp_timeout',
+            'device_group': dg,
+            'expected': baseline_session.tcp_timeout | string,
+            'actual': session_output.stdout | default(''),
+            'status': 'pass' if (baseline_session.tcp_timeout | string) in (session_output.stdout | default('')) else 'fail',
+            'severity': 'medium'
+          }] }}
+
+    - name: Evaluate UDP session timeout compliance
+      ansible.builtin.set_fact:
+        audit_results: >-
+          {{ audit_results + [{
+            'check': 'session_udp_timeout',
+            'device_group': dg,
+            'expected': baseline_session.udp_timeout | string,
+            'actual': session_output.stdout | default(''),
+            'status': 'pass' if (baseline_session.udp_timeout | string) in (session_output.stdout | default('')) else 'fail',
+            'severity': 'medium'
+          }] }}
+  rescue:
+    - name: Record session timeout check error
+      ansible.builtin.set_fact:
+        audit_results: >-
+          {{ audit_results + [{
+            'check': 'session_timeouts',
+            'device_group': dg,
+            'expected': 'baseline session timeouts',
+            'actual': 'error retrieving data',
+            'status': 'unknown',
+            'severity': 'medium'
+          }] }}
+  when: baseline_session is defined
+  tags:
+    - audit
+    - session
+
+# --- Audit Summary ---
+- name: Display audit summary
+  ansible.builtin.debug:
+    msg: >-
+      Compliance audit complete for {{ dg }}.
+      Total checks: {{ audit_results | length }},
+      Passed: {{ audit_results | selectattr('status', 'equalto', 'pass') | list | length }},
+      Failed: {{ audit_results | selectattr('status', 'equalto', 'fail') | list | length }},
+      Unknown: {{ audit_results | selectattr('status', 'equalto', 'unknown') | list | length }}
+  tags:
+    - audit

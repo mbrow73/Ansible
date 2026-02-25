@@ -33,3 +33,6 @@ Thumbs.db
 # Backup files
 *.bak
 *.backup
+
+# Compliance reports
+reports/*.json
