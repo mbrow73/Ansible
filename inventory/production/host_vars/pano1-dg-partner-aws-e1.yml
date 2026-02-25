@@ -1,29 +1,8 @@
 ---
-baseline_security_profile_group:
-  name: "Partner-Security-Profile"
-  virus: "default"
-  spyware: "default"
-  vulnerability: "default"
-  url_filtering: "alert-only"
-  file_blocking: "basic-file-blocking"
-  wildfire: "default"
+# AWS Partner DG
+# Inherits from: group_vars/partner_networks.yml, group_vars/cloud_environments.yml
 
-baseline_zone_protection:
-  name: "Partner-Zone-Protection"
-  settings:
-    flood_tcp_syn: 25000
-    flood_udp: 25000
-    flood_icmpv4: 2500
-    scan_protection: true
-
-baseline_management:
-  idle_timeout: 15
-
-baseline_session:
-  tcp_timeout: 3600
-  udp_timeout: 30
-  tcp_timewait: 15
-
+# AWS-specific NTP and DNS
 baseline_ntp:
   primary_server: "169.254.169.123"
   secondary_server: "0.pool.ntp.org"
@@ -32,6 +11,7 @@ baseline_dns:
   primary_server: "169.254.169.253"
   secondary_server: "8.8.8.8"
 
+# DG-specific security rules
 baseline_security_rules:
   - name: "Allow-Partner-Traffic"
     source_zone: ["partner"]

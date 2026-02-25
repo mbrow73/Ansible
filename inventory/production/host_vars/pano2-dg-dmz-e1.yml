@@ -1,4 +1,7 @@
 ---
+# DMZ DG - unique security posture, not part of internet_facing or partner groups
+# Inherits from: group_vars/all.yml only
+
 baseline_security_profile_group:
   name: "DMZ-Security-Profile"
   virus: "strict"
@@ -38,7 +41,7 @@ baseline_security_rules:
     service: ["service-https"]
     action: "allow"
     profile_group: "DMZ-Security-Profile"
-    log_start: true  # Log start AND end
+    log_start: true
     log_end: true
     description: "Inbound web traffic to DMZ"
 
