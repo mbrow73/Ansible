@@ -1,0 +1,29 @@
+---
+- name: Palo Alto Baseline Compliance Audit
+  hosts: panorama
+  gather_facts: false
+
+  vars:
+    audit_results: []
+    audit_timestamp: "{{ lookup('pipe', 'date +%Y-%m-%dT%H:%M:%S') }}"
+
+  tasks:
+    - name: Include common Panorama tasks
+      ansible.builtin.include_role:
+        name: panorama_common
+      tags:
+        - always
+
+    - name: Include compliance checks
+      ansible.builtin.include_role:
+        name: compliance_audit
+      tags:
+        - audit
+
+    - name: Generate compliance report
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/../templates/compliance_report.j2"
+        dest: "{{ playbook_dir }}/../reports/{{ inventory_hostname }}_compliance_{{ audit_timestamp | regex_replace('[:]', '-') }}.json"
+      delegate_to: localhost
+      tags:
+        - report

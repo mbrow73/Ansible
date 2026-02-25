@@ -1,0 +1,18 @@
+{
+  "report_metadata": {
+    "generated_at": "{{ audit_timestamp }}",
+    "host": "{{ inventory_hostname }}",
+    "device_group": "{{ device_group }}",
+    "template_stack": "{{ template_stack }}",
+    "env_type": "{{ env_type | default('unknown') }}",
+    "network_type": "{{ network_type | default('unknown') }}"
+  },
+  "summary": {
+    "total_checks": {{ audit_results | length }},
+    "passed": {{ audit_results | selectattr('status', 'equalto', 'pass') | list | length }},
+    "failed": {{ audit_results | selectattr('status', 'equalto', 'fail') | list | length }},
+    "unknown": {{ audit_results | selectattr('status', 'equalto', 'unknown') | list | length }},
+    "compliance_percentage": {{ ((audit_results | selectattr('status', 'equalto', 'pass') | list | length) / (audit_results | length) * 100) | round(1) if audit_results | length > 0 else 0 }}
+  },
+  "findings": {{ audit_results | to_nice_json }}
+}

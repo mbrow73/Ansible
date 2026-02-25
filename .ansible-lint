@@ -1,0 +1,11 @@
+---
+skip_list:
+  - yaml[truthy]  # Allow yes/no in YAML
+  - name[template]  # Allow Jinja2 in task names
+
+warn_list:
+  - experimental
+
+exclude_paths:
+  - .github/
+  - reports/
