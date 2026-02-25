@@ -1,33 +1,13 @@
 ---
-baseline_security_profile_group:
-  name: "Internet-Security-Profile"
-  virus: "strict"
-  spyware: "strict"
-  vulnerability: "strict"
-  url_filtering: "strict"
-  file_blocking: "strict"
-  wildfire: "default"
+# GCP Internet-facing DG
+# Inherits from: group_vars/internet_facing.yml, group_vars/cloud_environments.yml
 
-baseline_zone_protection:
-  name: "Internet-Zone-Protection"
-  settings:
-    flood_tcp_syn: 50000
-    flood_udp: 50000
-    flood_icmpv4: 5000
-    scan_protection: true
-
-baseline_management:
-  idle_timeout: 10
-
-baseline_session:
-  tcp_timeout: 1800
-  udp_timeout: 30
-  tcp_timewait: 15
-
+# GCP-specific NTP (overrides group default)
 baseline_ntp:
   primary_server: "metadata.google.internal"
   secondary_server: "0.pool.ntp.org"
 
+# DG-specific security rules
 baseline_security_rules:
   - name: "Block-Inbound-Internet"
     source_zone: ["untrust"]
