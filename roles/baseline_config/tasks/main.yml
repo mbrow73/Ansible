@@ -1,4 +1,10 @@
 ---
+- name: Set check mode from variable
+  ansible.builtin.set_fact:
+    ansible_check_mode: "{{ baseline_check_mode | default(false) | bool }}"
+  tags:
+    - always
+
 - name: Set baseline facts
   ansible.builtin.set_fact:
     panorama_provider: "{{ provider }}"
@@ -6,7 +12,7 @@
     ts: "{{ template_stack }}"
 
 - name: Configure baseline security profile group
-  paloaltonetworks.panos.panos_security_rule_group:
+  paloaltonetworks.panos.panos_security_profile_group:
     provider: "{{ panorama_provider }}"
     device_group: "{{ dg }}"
     name: "{{ baseline_security_profile_group.name }}"
@@ -19,6 +25,30 @@
     state: present
   tags:
     - security_profiles
+
+- name: Configure baseline security rules
+  paloaltonetworks.panos.panos_security_rule:
+    provider: "{{ panorama_provider }}"
+    device_group: "{{ dg }}"
+    rule_name: "{{ item.name }}"
+    source_zone: "{{ item.source_zone }}"
+    destination_zone: "{{ item.destination_zone }}"
+    source_ip: "{{ item.source_address }}"
+    destination_ip: "{{ item.destination_address }}"
+    application: "{{ item.application }}"
+    service: "{{ item.service }}"
+    action: "{{ item.action }}"
+    group_profile: "{{ item.profile_group | default(omit) }}"
+    log_start: "{{ item.log_start | default(false) }}"
+    log_end: "{{ item.log_end | default(true) }}"
+    description: "{{ item.description | default('') }}"
+    state: present
+  loop: "{{ baseline_security_rules | default([]) }}"
+  loop_control:
+    label: "{{ item.name }}"
+  when: baseline_security_rules is defined
+  tags:
+    - security_rules
 
 - name: Configure baseline zone protection profile
   paloaltonetworks.panos.panos_zone_protection_profile:
@@ -59,6 +89,76 @@
     template: "{{ ts }}"
     admin_lockout_time: "{{ baseline_management.idle_timeout }}"
   tags:
+    - management
+
+- name: Configure session timeouts
+  paloaltonetworks.panos.panos_mgtconfig:
+    provider: "{{ panorama_provider }}"
+    template: "{{ ts }}"
+    timeout_tcp: "{{ baseline_session.tcp_timeout }}"
+    timeout_udp: "{{ baseline_session.udp_timeout }}"
+  when: baseline_session is defined
+  tags:
+    - session
+    - management
+
+# Note: panos_password_complexity may not exist in all collection versions.
+# If unavailable, use panos_config_element with the appropriate XML xpath.
+- name: Configure password complexity profile
+  paloaltonetworks.panos.panos_password_complexity:
+    provider: "{{ panorama_provider }}"
+    template: "{{ ts }}"
+    enabled: "{{ baseline_password_policy.enabled }}"
+    minimum_length: "{{ baseline_password_policy.minimum_length }}"
+    minimum_uppercase_letters: 1
+    minimum_lowercase_letters: 1
+    minimum_numeric_letters: 1
+    minimum_special_characters: 1
+    password_history_count: "{{ baseline_password_policy.password_history }}"
+    new_password_differs_by_characters: 3
+  when: baseline_password_policy is defined
+  tags:
+    - password_policy
+    - management
+
+# Note: panos_log_forwarding_profile may not exist in all collection versions.
+# If unavailable, use panos_config_element with the appropriate XML xpath.
+- name: Configure log forwarding profile
+  paloaltonetworks.panos.panos_log_forwarding_profile:
+    provider: "{{ panorama_provider }}"
+    device_group: "{{ dg }}"
+    name: "{{ baseline_logging.log_forwarding_profile }}"
+    state: present
+  when: baseline_logging is defined
+  tags:
+    - logging
+
+# Note: panos_dns_security_profile may not exist in all collection versions.
+# If unavailable, use panos_config_element with the appropriate XML xpath.
+- name: Configure DNS security profile
+  paloaltonetworks.panos.panos_dns_security_profile:
+    provider: "{{ panorama_provider }}"
+    device_group: "{{ dg }}"
+    name: "{{ baseline_dns_security.profile }}"
+    state: present
+  when: baseline_dns_security is defined and baseline_dns_security.enabled
+  tags:
+    - dns_security
+    - security_profiles
+
+# Note: panos_dynamic_updates may not exist in all collection versions.
+# If unavailable, use panos_config_element with the appropriate XML xpath.
+- name: Configure threat prevention dynamic updates
+  paloaltonetworks.panos.panos_dynamic_updates:
+    provider: "{{ panorama_provider }}"
+    template: "{{ ts }}"
+    type: "threats"
+    action: "{{ baseline_updates.threat_prevention_updates }}"
+    schedule: "{{ baseline_updates.update_schedule }}"
+    time: "{{ baseline_updates.update_time }}"
+  when: baseline_updates is defined
+  tags:
+    - updates
     - management
 
 - name: Retrieve device groups for validation

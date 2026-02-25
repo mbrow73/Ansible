@@ -5,11 +5,26 @@
 
   tasks:
     - name: Apply baseline configuration
-      ansible.builtin.include_role:
-        name: baseline_config
-      tags:
-        - baseline
-        - compliance
+      block:
+        - name: Include baseline config role
+          ansible.builtin.include_role:
+            name: baseline_config
+          tags:
+            - baseline
+            - compliance
+      rescue:
+        - name: Configuration failed - reverting candidate config
+          paloaltonetworks.panos.panos_op:
+            provider: "{{ provider }}"
+            cmd: "revert config"
+          tags:
+            - always
+
+        - name: Fail with error message
+          ansible.builtin.fail:
+            msg: "Baseline configuration failed for {{ device_group }}. Candidate config reverted."
+          tags:
+            - always
 
     - name: Commit changes
       paloaltonetworks.panos.panos_commit_panorama:
@@ -20,3 +35,17 @@
         - not ansible_check_mode
       tags:
         - commit
+
+    - name: Push configuration to managed devices
+      paloaltonetworks.panos.panos_commit_push:
+        provider: "{{ provider }}"
+        style: "device group"
+        name: "{{ device_group }}"
+        description: "{{ commit_description }} - Baseline compliance push"
+        include_template: true
+      when:
+        - commit_changes | default(true) | bool
+        - not ansible_check_mode
+      tags:
+        - commit
+        - push
